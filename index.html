@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Management</title>
+    <!-- Include jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <style>
+      /* Add your custom styles here */
+    </style>
+  </head>
+
+  <body>
+    <div class="container mt-5">
+      <h2>Product Management</h2>
+      <form id="productForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="productName">Product Name:</label>
+          <input type="text" class="form-control" id="productName" required />
+        </div>
+        <div class="form-group">
+          <label for="unit">Unit:</label>
+          <input type="text" class="form-control" id="unit" required />
+        </div>
+        <div class="form-group">
+          <label for="price">Price:</label>
+          <input
+            type="number"
+            class="form-control"
+            id="price"
+            step="0.01"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="expiryDate">Date of Expiry:</label>
+          <input type="date" class="form-control" id="expiryDate" required />
+        </div>
+        <div class="form-group">
+          <label for="inventory">Available Inventory:</label>
+          <input type="number" class="form-control" id="inventory" required />
+        </div>
+        <div class="form-group">
+          <label for="image">Product Image:</label>
+          <input
+            type="file"
+            class="form-control-file"
+            id="image"
+            accept="image/*"
+            required
+          />
+        </div>
+        <!-- Add hidden input field for the record ID -->
+        <input type="hidden" id="recordId" name="recordId" />
+
+        <button type="button" class="btn btn-primary" onclick="createRecord()">
+          Create Record
+        </button>
+      </form>
+
+      <hr />
+
+      <h2>Product Information</h2>
+      <table class="table table-bordered">
+        <tbody id="productInfo"></tbody>
+      </table>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <script>
+      // Placeholder displayImage function
+      function displayImage(imageUrl) {
+        alert("Displaying image: " + imageUrl);
+        // You can implement your own logic to display the image (e.g., modal, lightbox, etc.)
+      }
+
+      // Function to delete a record from the database using Ajax
+      function deleteRecord() {
+        // Get the selected record ID
+        var selectedRecordId = getSelectedRecordId();
+        if (!selectedRecordId) {
+          alert("Please select a record to delete.");
+          return;
+        }
+
+        // Simulate an AJAX request to delete the record with the selected ID
+        $.ajax({
+          url: "delete_record.php",
+          method: "POST",
+          data: {
+            id: selectedRecordId,
+          },
+          success: function (response) {
+            alert(response);
+            // Call a function to update product information on the page
+            readRecords();
+          },
+          error: function (error) {
+            alert("Error deleting record: " + error.responseText);
+          },
+        });
+      }
+
+      // Function to update a record in the database using Ajax
+      function updateRecord() {
+        // Get the selected record ID
+        var selectedRecordId = getSelectedRecordId();
+        if (!selectedRecordId) {
+          alert("Please select a record to update.");
+          return;
+        }
+
+        // Retrieve form data
+        var productName = $("#productName").val();
+        var unit = $("#unit").val();
+        var price = $("#price").val();
+        var expiryDate = $("#expiryDate").val();
+        var inventory = $("#inventory").val();
+
+        // Simulate an AJAX request to update the record in the database
+        $.ajax({
+          url: "update_record.php",
+          method: "POST",
+          data: {
+            id: selectedRecordId,
+            productName: productName,
+            unit: unit,
+            price: price,
+            expiryDate: expiryDate,
+            inventory: inventory,
+          },
+          dataType: "json",
+          success: function (response) {
+            alert(response);
+            // Call a function to update product information on the page
+            readRecords();
+          },
+          error: function (error) {
+            alert("Error updating record: " + error.responseText);
+          },
+        });
+      }
+
+      // Function to create a record in the database using Ajax
+      function createRecord() {
+        // Retrieve form data
+        var productName = $("#productName").val();
+        var unit = $("#unit").val();
+        var price = $("#price").val();
+        var expiryDate = $("#expiryDate").val();
+        var inventory = $("#inventory").val();
+        // Handle the image file
+        var image = $("#image")[0].files[0];
+
+        // Create FormData to send file data
+        var formData = new FormData();
+        formData.append("productName", productName);
+        formData.append("unit", unit);
+        formData.append("price", price);
+        formData.append("expiryDate", expiryDate);
+        formData.append("inventory", inventory);
+        formData.append("image", image);
+
+        // Simulate an AJAX request
+        $.ajax({
+          url: "create_record.php",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (response) {
+            alert(response);
+            // Call a function to update product information on the page
+            readRecords();
+          },
+          error: function (error) {
+            alert("Error creating record: " + error.responseText);
+          },
+        });
+      }
+
+      // Function to read records from the database using Ajax
+      function readRecords() {
+        $.ajax({
+          url: "read_records.php",
+          method: "GET",
+          dataType: "json",
+          success: function (response) {
+            if (response.length === 0) {
+              alert("No records found.");
+            } else {
+              // Handle the records
+              var records = response;
+              var productInfoDiv = $("#productInfo");
+              productInfoDiv.empty();
+
+              // Create a table and its header
+              var table = $('<table class="table">');
+              var header =
+                "<thead><tr><th>ID</th><th>Name</th><th>Unit</th><th>Price</th><th>Expiry Date</th><th>Available Inventory</th><th>Image</th><th>Action</th></tr></thead>";
+              table.append(header);
+
+              // Create table body
+              var tbody = $("<tbody>");
+
+              $.each(records, function (index, record) {
+                // Add a row for each record
+                var row =
+                  '<tr data-record-id="' +
+                  record.id +
+                  '" onclick="selectRecord(' +
+                  record.id +
+                  ')">';
+                row += "<td>" + record.id + "</td>";
+                row += "<td>" + record.product_name + "</td>";
+                row += "<td>" + record.unit + "</td>";
+                row += "<td>" + record.price + "</td>";
+                row += "<td>" + record.expiry_date + "</td>";
+                row += "<td>" + record.available_inventory + "</td>";
+
+                if (record.image_url && record.image_url.trim() !== '') {
+    row +=
+        '<td><img src="' +
+        record.image_url +
+        '" alt="Product Image" style="max-width: 100px; cursor: pointer;" onclick="displayImage(\'' + record.image_url + '\')"></td>';
+} else {
+    // Display a placeholder image or leave it empty
+    row += '<td><img src="" alt="No Image" style="max-width: 100px"></td>';
+}
+                row +=
+                  '<td>   <button type="button" class="btn btn-danger" onclick="deleteRecord()">Delete Record</button></td>';
+                row +=
+                  '<td>   <button type="button" class="btn btn-warning" onclick="updateRecord()">Update Record</button></td>';
+
+                row += "</tr>";
+                tbody.append(row);
+              });
+
+              // Append the table body to the table
+              table.append(tbody);
+
+              // Append the table to the productInfoDiv
+              productInfoDiv.append(table);
+            }
+          },
+          error: function (error) {
+            alert("Error reading records: " + error.responseText);
+          },
+        });
+      }
+
+      // Function to edit a record
+      function editRecord(recordId) {
+        // Set the record ID in the hidden input field
+        $("#recordId").val(recordId);
+
+        // Update the form fields with the selected record details
+        updateFormFields(recordId);
+      }
+
+      // Function to select a record
+      function selectRecord(recordId) {
+        // Remove the 'active' class from all rows
+        $("tbody tr").removeClass("active");
+
+        // Add the 'active' class to the selected row
+        var selectedRow = $('tr[data-record-id="' + recordId + '"]');
+        selectedRow.addClass("active");
+
+        // Log the selected record ID for debugging
+        console.log("Selected Record ID:", recordId);
+
+        // Update the form fields with the selected record details
+        updateFormFields(recordId);
+      }
+
+      // Function to update the form fields with selected record details
+      function updateFormFields(recordId) {
+        // Simulate an AJAX request to get the selected record details
+        $.ajax({
+          url: "get_record.php", // Adjust the URL to your backend logic to get a record by ID
+          method: "POST",
+          data: {
+            id: recordId,
+          },
+          dataType: "json",
+          success: function (response) {
+            // Handle the success response
+            // Update the form fields with the selected record details
+            $("#productName").val(response.product_name);
+            $("#unit").val(response.unit);
+            $("#price").val(response.price);
+            $("#expiryDate").val(response.expiry_date);
+            $("#inventory").val(response.available_inventory);
+          },
+          error: function (error) {
+            alert("Error getting record details: " + error.responseText);
+          },
+        });
+      }
+
+      // Function to perform the actual update after getting the record details
+      function performUpdate() {
+        // Get the selected record ID
+        var selectedRecordId = getSelectedRecordId();
+
+        // Simulate an AJAX request to update the record in the database
+        $.ajax({
+          url: "get_record.php",
+          method: "POST",
+          data: {
+            id: selectedRecordId,
+          },
+          dataType: "json",
+          success: function (response) {
+            // Handle the success response
+            // Update the form fields with the selected record details
+            $("#productName").val(response.product_name);
+            $("#unit").val(response.unit);
+            $("#price").val(response.price);
+            $("#expiryDate").val(response.expiry_date);
+            $("#inventory").val(response.available_inventory);
+
+            // Set the record ID in the hidden input field
+            $("#recordId").val(selectedRecordId);
+
+            // Trigger a click event on the file input to clear the previous selection
+            $("#image").click();
+          },
+          error: function (error) {
+            alert("Error getting record details: " + error.responseText);
+          },
+        });
+      }
+
+      // Function to get the selected record ID
+      function getSelectedRecordId() {
+        // Find the row with the 'active' class
+        var selectedRow = $("tbody tr.active");
+
+        // If a row is selected, extract and return its data-record-id attribute
+        if (selectedRow.length > 0) {
+          return selectedRow.data("record-id");
+        }
+
+        // If no row is selected, return null
+        return null;
+      }
+
+      // Initial load of records
+      readRecords();
+    </script>
+  </body>
+</html>

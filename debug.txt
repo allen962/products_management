@@ -1,0 +1,8 @@
+Array
+(
+    [productName] => coca cola
+    [unit] => 23
+    [price] => 16
+    [expiryDate] => 2025-02-03
+    [inventory] => 32
+)
